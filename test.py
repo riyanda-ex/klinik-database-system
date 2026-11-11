@@ -4,6 +4,7 @@
 # Kalau MySQL belum jalan, test akan skip dengan pesan jelas.
 
 import sys
+import os
 
 try:
     import mysql.connector
@@ -14,12 +15,13 @@ except ImportError:
     sys.exit(1)
 
 # ================= KONFIGURASI =================
-# Ganti sesuai MySQL kamu kalau beda
+# Di laptop: pakai default localhost / root / password kosong
+# Di GitHub Actions: dibaca dari env DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
 DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "",
-    "database": "klinik_db"
+    "host": os.getenv("DB_HOST", "localhost"),
+    "user": os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD", ""),
+    "database": os.getenv("DB_NAME", "klinik_db")
 }
 
 passed = 0
