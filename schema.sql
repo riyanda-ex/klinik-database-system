@@ -138,3 +138,86 @@ BEGIN
   END IF;
 END //
 DELIMITER ;
+
+-- ============================================================
+-- AUDIT LOG - Mencatat Semua Perubahan Data (Audit Trail)
+-- Standar produksi RS: siapa, kapan, apa yang diubah
+-- Versi MySQL 8.0
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS audit_log (
+  id_log INT AUTO_INCREMENT PRIMARY KEY,
+  nama_tabel VARCHAR(50) NOT NULL,
+  id_record INT NOT NULL,
+  aksi VARCHAR(10) NOT NULL CHECK (aksi IN ('INSERT', 'UPDATE', 'DELETE')),
+  data_lama TEXT NULL,
+  data_baru TEXT NULL,
+  diubah_oleh VARCHAR(50) DEFAULT 'system',
+  diubah_pada TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_audit_tabel (nama_tabel),
+  INDEX idx_audit_waktu (diubah_pada)
+) ENGINE=InnoDB;
+
+DELIMITER //
+
+-- Trigger: Catat setiap perubahan di tabel pasien
+CREATE TRIGGER IF NOT EXISTS trg_pasien_audit_update
+AFTER UPDATE ON pasien
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_log (nama_tabel, id_record, aksi, data_lama, data_baru)
+    VALUES (
+        'pasien',
+        OLD.id_pasien,
+        'UPDATE',
+        CONCAT('kode=', OLD.kode_pasien, ', jaminan=', OLD.kode_jaminan),
+        CONCAT('kode=', NEW.kode_pasien, ', jaminan=', NEW.kode_jaminan)
+    );
+END //
+
+-- Trigger: Catat setiap hapus pasien
+CREATE TRIGGER IF NOT EXISTS trg_pasien_audit_delete
+AFTER DELETE ON pasien
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_log (nama_tabel, id_record, aksi, data_lama, data_baru)
+    VALUES (
+        'pasien',
+        OLD.id_pasien,
+        'DELETE',
+        CONCAT('kode=', OLD.kode_pasien, ', jaminan=', OLD.kode_jaminan),
+        NULL
+    );
+END //
+
+-- Trigger: Catat setiap perubahan stok obat
+CREATE TRIGGER IF NOT EXISTS trg_obat_audit_update
+AFTER UPDATE ON obat
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_log (nama_tabel, id_record, aksi, data_lama, data_baru)
+    VALUES (
+        'obat',
+        OLD.id_obat,
+        'UPDATE',
+        CONCAT('kode=', OLD.kode_obat, ', stok=', OLD.stok),
+        CONCAT('kode=', NEW.kode_obat, ', stok=', NEW.stok)
+    );
+END //
+
+-- Trigger: Catat setiap kunjungan baru
+CREATE TRIGGER IF NOT EXISTS trg_kunjungan_audit_insert
+AFTER INSERT ON kunjungan
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_log (nama_tabel, id_record, aksi, data_lama, data_baru)
+    VALUES (
+        'kunjungan',
+        NEW.id_kunjungan,
+        'INSERT',
+        NULL,
+        CONCAT('pasien=', NEW.id_pasien, ', dokter=', NEW.id_dokter, ', diagnosis=', NEW.diagnosis)
+    );
+END //
+
+DELIMITER ;
