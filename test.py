@@ -41,7 +41,17 @@ def test(nama, kondisi, detail=""):
 
 def get_tables(cursor):
     cursor.execute("SHOW TABLES")
-    return [row[0] for row in cursor.fetchall()]
+    rows = cursor.fetchall()
+    # cursor dictionary=True -> row = {'Tables_in_klinik_db': 'pasien'}
+    # cursor biasa -> row = ('pasien',)
+    # Ambil value pertama biar dua-duanya jalan
+    tables = []
+    for row in rows:
+        if isinstance(row, dict):
+            tables.append(list(row.values())[0])
+        else:
+            tables.append(row[0])
+    return tables
 
 def main():
     print("=" * 60)
