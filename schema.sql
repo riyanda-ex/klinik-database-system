@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS pasien (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_pasien_kode (kode_pasien),
   INDEX idx_pasien_jaminan (kode_jaminan),
-  CONSTRAINT chk_golongan_darah CHECK (golongan_darah IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', NULL))
+  CONSTRAINT chk_golongan_darah CHECK (golongan_darah IS NULL OR golongan_darah IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'))
 ) ENGINE=InnoDB;
 
 -- ================= TABEL 2: DOKTER =================
@@ -129,7 +129,8 @@ ORDER BY k.tanggal_kunjungan DESC;
 
 -- ================= TRIGGER: CEGAH STOK NEGATIF =================
 DELIMITER //
-CREATE TRIGGER IF NOT EXISTS trg_cegah_stok_negatif
+DROP TRIGGER IF EXISTS trg_cegah_stok_negatif //
+CREATE TRIGGER trg_cegah_stok_negatif
 BEFORE UPDATE ON obat
 FOR EACH ROW
 BEGIN
@@ -161,7 +162,8 @@ CREATE TABLE IF NOT EXISTS audit_log (
 DELIMITER //
 
 -- Trigger: Catat setiap perubahan di tabel pasien
-CREATE TRIGGER IF NOT EXISTS trg_pasien_audit_update
+DROP TRIGGER IF EXISTS trg_pasien_audit_update //
+CREATE TRIGGER trg_pasien_audit_update
 AFTER UPDATE ON pasien
 FOR EACH ROW
 BEGIN
@@ -176,7 +178,8 @@ BEGIN
 END //
 
 -- Trigger: Catat setiap hapus pasien
-CREATE TRIGGER IF NOT EXISTS trg_pasien_audit_delete
+DROP TRIGGER IF EXISTS trg_pasien_audit_delete //
+CREATE TRIGGER trg_pasien_audit_delete
 AFTER DELETE ON pasien
 FOR EACH ROW
 BEGIN
@@ -191,7 +194,8 @@ BEGIN
 END //
 
 -- Trigger: Catat setiap perubahan stok obat
-CREATE TRIGGER IF NOT EXISTS trg_obat_audit_update
+DROP TRIGGER IF EXISTS trg_obat_audit_update //
+CREATE TRIGGER trg_obat_audit_update
 AFTER UPDATE ON obat
 FOR EACH ROW
 BEGIN
@@ -206,7 +210,8 @@ BEGIN
 END //
 
 -- Trigger: Catat setiap kunjungan baru
-CREATE TRIGGER IF NOT EXISTS trg_kunjungan_audit_insert
+DROP TRIGGER IF EXISTS trg_kunjungan_audit_insert //
+CREATE TRIGGER trg_kunjungan_audit_insert
 AFTER INSERT ON kunjungan
 FOR EACH ROW
 BEGIN
