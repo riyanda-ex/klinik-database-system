@@ -2,12 +2,14 @@
 
 ## Diagram Relasi (Entity Relationship Diagram)
 
+```
 pasien (1) ----< kunjungan (N) >---- (1) dokter
                   |
                   | (1)
                   |
                   v (N)
                  resep (N) >---- (1) obat
+```
 
 ## Penjelasan Relasi
 
