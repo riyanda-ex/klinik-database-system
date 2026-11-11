@@ -1,11 +1,50 @@
 name: Tests
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ""
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_DATABASE: klinik_db
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python test.py
+
+      - name: Install dependencies
+        run: |
+          pip install mysql-connector-python
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            mysql -h 127.0.0.1 -u root -e "SELECT 1" && break
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      - name: Load schema
+        run: |
+          mysql -h 127.0.0.1 -u root klinik_db < schema.sql
+
+      - name: Run tests
+        run: |
+          python test.py
