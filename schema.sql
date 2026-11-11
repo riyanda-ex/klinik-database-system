@@ -128,17 +128,11 @@ WHERE k.status_klaim IN ('PERLU_PERBAIKAN', 'DITOLAK')
 ORDER BY k.tanggal_kunjungan DESC;
 
 -- ================= TRIGGER: CEGAH STOK NEGATIF =================
-DELIMITER //
-DROP TRIGGER IF EXISTS trg_cegah_stok_negatif //
+DROP TRIGGER IF EXISTS trg_cegah_stok_negatif;
 CREATE TRIGGER trg_cegah_stok_negatif
 BEFORE UPDATE ON obat
 FOR EACH ROW
-BEGIN
-  IF NEW.stok < 0 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Stok tidak boleh negatif';
-  END IF;
-END //
-DELIMITER ;
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Stok tidak boleh negatif';
 
 -- ============================================================
 -- AUDIT LOG - Mencatat Semua Perubahan Data (Audit Trail)
@@ -159,70 +153,41 @@ CREATE TABLE IF NOT EXISTS audit_log (
   INDEX idx_audit_waktu (diubah_pada)
 ) ENGINE=InnoDB;
 
-DELIMITER //
-
 -- Trigger: Catat setiap perubahan di tabel pasien
-DROP TRIGGER IF EXISTS trg_pasien_audit_update //
+DROP TRIGGER IF EXISTS trg_pasien_audit_update;
 CREATE TRIGGER trg_pasien_audit_update
 AFTER UPDATE ON pasien
 FOR EACH ROW
-BEGIN
-    INSERT INTO audit_log (nama_tabel, id_record, aksi, data_lama, data_baru)
-    VALUES (
-        'pasien',
-        OLD.id_pasien,
-        'UPDATE',
-        CONCAT('kode=', OLD.kode_pasien, ', jaminan=', OLD.kode_jaminan),
-        CONCAT('kode=', NEW.kode_pasien, ', jaminan=', NEW.kode_jaminan)
-    );
-END //
+  INSERT INTO audit_log (nama_tabel, id_record, aksi, data_lama, data_baru)
+  VALUES ('pasien', OLD.id_pasien, 'UPDATE',
+    CONCAT('kode=', OLD.kode_pasien, ', jaminan=', OLD.kode_jaminan),
+    CONCAT('kode=', NEW.kode_pasien, ', jaminan=', NEW.kode_jaminan));
 
 -- Trigger: Catat setiap hapus pasien
-DROP TRIGGER IF EXISTS trg_pasien_audit_delete //
+DROP TRIGGER IF EXISTS trg_pasien_audit_delete;
 CREATE TRIGGER trg_pasien_audit_delete
 AFTER DELETE ON pasien
 FOR EACH ROW
-BEGIN
-    INSERT INTO audit_log (nama_tabel, id_record, aksi, data_lama, data_baru)
-    VALUES (
-        'pasien',
-        OLD.id_pasien,
-        'DELETE',
-        CONCAT('kode=', OLD.kode_pasien, ', jaminan=', OLD.kode_jaminan),
-        NULL
-    );
-END //
+  INSERT INTO audit_log (nama_tabel, id_record, aksi, data_lama, data_baru)
+  VALUES ('pasien', OLD.id_pasien, 'DELETE',
+    CONCAT('kode=', OLD.kode_pasien, ', jaminan=', OLD.kode_jaminan),
+    NULL);
 
 -- Trigger: Catat setiap perubahan stok obat
-DROP TRIGGER IF EXISTS trg_obat_audit_update //
+DROP TRIGGER IF EXISTS trg_obat_audit_update;
 CREATE TRIGGER trg_obat_audit_update
 AFTER UPDATE ON obat
 FOR EACH ROW
-BEGIN
-    INSERT INTO audit_log (nama_tabel, id_record, aksi, data_lama, data_baru)
-    VALUES (
-        'obat',
-        OLD.id_obat,
-        'UPDATE',
-        CONCAT('kode=', OLD.kode_obat, ', stok=', OLD.stok),
-        CONCAT('kode=', NEW.kode_obat, ', stok=', NEW.stok)
-    );
-END //
+  INSERT INTO audit_log (nama_tabel, id_record, aksi, data_lama, data_baru)
+  VALUES ('obat', OLD.id_obat, 'UPDATE',
+    CONCAT('kode=', OLD.kode_obat, ', stok=', OLD.stok),
+    CONCAT('kode=', NEW.kode_obat, ', stok=', NEW.stok));
 
 -- Trigger: Catat setiap kunjungan baru
-DROP TRIGGER IF EXISTS trg_kunjungan_audit_insert //
+DROP TRIGGER IF EXISTS trg_kunjungan_audit_insert;
 CREATE TRIGGER trg_kunjungan_audit_insert
 AFTER INSERT ON kunjungan
 FOR EACH ROW
-BEGIN
-    INSERT INTO audit_log (nama_tabel, id_record, aksi, data_lama, data_baru)
-    VALUES (
-        'kunjungan',
-        NEW.id_kunjungan,
-        'INSERT',
-        NULL,
-        CONCAT('pasien=', NEW.id_pasien, ', dokter=', NEW.id_dokter, ', diagnosis=', NEW.diagnosis)
-    );
-END //
-
-DELIMITER ;
+  INSERT INTO audit_log (nama_tabel, id_record, aksi, data_lama, data_baru)
+  VALUES ('kunjungan', NEW.id_kunjungan, 'INSERT', NULL,
+    CONCAT('pasien=', NEW.id_pasien, ', dokter=', NEW.id_dokter, ', diagnosis=', NEW.diagnosis));
